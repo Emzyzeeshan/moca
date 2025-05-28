@@ -1,0 +1,2 @@
+E:/Git/moca/android/app/.cxx/Debug/1w1pj3u5/x86/CMakeFiles/edit_cache.dir
+E:/Git/moca/android/app/.cxx/Debug/1w1pj3u5/x86/CMakeFiles/rebuild_cache.dir

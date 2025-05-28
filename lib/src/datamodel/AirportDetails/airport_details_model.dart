@@ -1,62 +1,74 @@
 class AirportDetailsModel {
-  String? airportName;
   String? airportOwnedBy;
-  String? operatedBy;
   List<String>? runways;
   String? nightLanding;
   String? digiYatra;
+  String? apron;
   String? mRO;
+  String? fieldType;
+  String? watchHours;
+  String? airportName;
+  String? palannedInaugurationDate;
+  String? operatedBy;
+  String? intitialInaugurationDate;
   String? airportType;
   String? passengerTerminalBuildingAreaInSqm;
-  String? fieldType;
   String? existingLandInAcres;
-  String? watchHours;
 
   AirportDetailsModel(
-      {this.airportName,
-        this.airportOwnedBy,
-        this.operatedBy,
+      {this.airportOwnedBy,
         this.runways,
         this.nightLanding,
         this.digiYatra,
+        this.apron,
         this.mRO,
+        this.fieldType,
+        this.watchHours,
+        this.airportName,
+        this.palannedInaugurationDate,
+        this.operatedBy,
+        this.intitialInaugurationDate,
         this.airportType,
         this.passengerTerminalBuildingAreaInSqm,
-        this.fieldType,
-        this.existingLandInAcres,
-        this.watchHours});
+        this.existingLandInAcres});
 
   AirportDetailsModel.fromJson(Map<String, dynamic> json) {
-    airportName = json['Airport Name'];
     airportOwnedBy = json['Airport Owned By'];
-    operatedBy = json['Operated By'];
     runways = json['Runways'].cast<String>();
     nightLanding = json['Night Landing'];
     digiYatra = json['Digi Yatra'];
+    apron = json['Apron'];
     mRO = json['MRO'];
+    fieldType = json['Field Type'];
+    watchHours = json['Watch Hours'];
+    airportName = json['Airport Name'];
+    palannedInaugurationDate = json['Palanned Inauguration Date'];
+    operatedBy = json['Operated By'];
+    intitialInaugurationDate = json['Intitial Inauguration Date'];
     airportType = json['Airport Type'];
     passengerTerminalBuildingAreaInSqm =
     json['Passenger Terminal Building (Area)(In Sqm)'];
-    fieldType = json['Field Type'];
     existingLandInAcres = json['Existing Land (In Acres)'];
-    watchHours = json['Watch Hours'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['Airport Name'] = this.airportName;
     data['Airport Owned By'] = this.airportOwnedBy;
-    data['Operated By'] = this.operatedBy;
     data['Runways'] = this.runways;
     data['Night Landing'] = this.nightLanding;
     data['Digi Yatra'] = this.digiYatra;
+    data['Apron'] = this.apron;
     data['MRO'] = this.mRO;
+    data['Field Type'] = this.fieldType;
+    data['Watch Hours'] = this.watchHours;
+    data['Airport Name'] = this.airportName;
+    data['Palanned Inauguration Date'] = this.palannedInaugurationDate;
+    data['Operated By'] = this.operatedBy;
+    data['Intitial Inauguration Date'] = this.intitialInaugurationDate;
     data['Airport Type'] = this.airportType;
     data['Passenger Terminal Building (Area)(In Sqm)'] =
         this.passengerTerminalBuildingAreaInSqm;
-    data['Field Type'] = this.fieldType;
     data['Existing Land (In Acres)'] = this.existingLandInAcres;
-    data['Watch Hours'] = this.watchHours;
     return data;
   }
 }

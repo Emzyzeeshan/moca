@@ -36,16 +36,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     fetchData();
     // Initialize _screens inside initState where context is available
     _screens = [
-      IndiaMapWidget(
-        onStateSelected: (String state) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StateDetailScreen(stateName: state),
-            ),
-          );
-        },
-      ),
+      IndiaMapWidget(),
       const FilterScreen(), // Second tab - Filters Screen
     ];
   }
@@ -135,21 +126,50 @@ class _DashboardScreenState extends State<DashboardScreen> {
               index: _selectedIndex,
               children: _screens,
             ),
-            bottomNavigationBar: BottomNavigationBar(
-              items: const <BottomNavigationBarItem>[
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.map),
-                  label: 'India Map',
+            bottomNavigationBar: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-                BottomNavigationBarItem(
-                  icon: Icon(Icons.filter_list),
-                  label: 'Filters',
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black12,
+                    blurRadius: 10,
+                    offset: Offset(0, -1),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
                 ),
-              ],
-              currentIndex: _selectedIndex,
-              selectedItemColor: ThemeColors.primaryColor,
-              onTap: _onItemTapped,
+                child: BottomNavigationBar(
+                  backgroundColor: Colors.white,
+                  type: BottomNavigationBarType.fixed,
+                  elevation: 0,
+                  selectedItemColor: ThemeColors.primaryColor,
+                  unselectedItemColor: Colors.grey[600],
+                  selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
+                  currentIndex: _selectedIndex,
+                  onTap: _onItemTapped,
+                  items: const <BottomNavigationBarItem>[
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.map),
+                      label: 'India Map',
+                    ),
+                    BottomNavigationBarItem(
+                      icon: Icon(Icons.filter_list),
+                      label: 'Filters',
+                    ),
+                  ],
+                ),
+              ),
             ),
+
           ),
         );
       },

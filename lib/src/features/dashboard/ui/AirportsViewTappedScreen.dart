@@ -257,26 +257,48 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
                         elevation: 1,
                         children: List.generate(provider.groupsList.length, (index) {
                           GroupsModel group = provider.groupsList[index];
+
                           return ExpansionPanel(
                             backgroundColor: Colors.white,
                             headerBuilder: (context, isExpanded) {
                               return Container(
                                 color: Theme.of(context).primaryColor,
                                 padding: const EdgeInsets.all(10),
-                                child: Text(
-                                  group.groupHeading ?? "Unknown",
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                  ),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    // Group Heading
+                                    Expanded(
+                                      child: Text(
+                                        group.groupHeading ?? "Unknown",
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    // Last Updated On or Dynamic
+                                    Text(
+                                      group.lastUpdatedDate != null && group.lastUpdatedDate != "Not Updated"
+                                          ? "Last Updated On: ${group.lastUpdatedDate}"
+                                          : "Last Updated On: Dynamic",
+                                      style: const TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 12,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               );
                             },
+
                             body: _buildPanelBody(group, provider),
                             isExpanded: expansionStates[index],
                           );
                         }),
                       ),
+
                     )
                         : const Center(child: CircularProgressIndicator()),
 
@@ -642,6 +664,8 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ["Existing Land (In Acres)", details.existingLandInAcres],
       ["Digi Yatra", details.digiYatra],
       ["MRO", details.mRO],
+      ["Intitial Inauguration Date", details.intitialInaugurationDate],
+      ["Palanned Inauguration Date", details.palannedInaugurationDate],
       ["Airport Owned By", details.airportOwnedBy],
       ["Watch Hours", details.watchHours],
       ["Night Landing", details.nightLanding],
@@ -928,18 +952,68 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       child: Padding(
         padding: const EdgeInsets.all(10.0),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: greenInitiative.entries.map((entry) {
-            return Row(
-              children: [
-                Expanded(child: _buildDetailRow("", entry.value?.toString() ?? " ", showTitle: false)),
-              ],
+          children: greenInitiative.entries.map((section) {
+            final sectionTitle = section.key;
+            final sectionData = section.value as Map<String, dynamic>;
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Section Title
+                  Container(
+                    width: double.infinity,
+                    color: ThemeColors.primaryColor,
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      sectionTitle,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+
+                  // Section Table (Key-Value Rows)
+                  Table(
+                    columnWidths: const {
+                      0: FlexColumnWidth(2),
+                      1: FlexColumnWidth(3),
+                    },
+                    border: TableBorder.all(color: Colors.grey.shade300),
+                    children: sectionData.entries.map((entry) {
+                      return TableRow(
+                        children: [
+                          _tableCell(entry.key, isHeader: true),
+                          _tableCell(entry.value.toString()),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
             );
           }).toList(),
         ),
       ),
     );
   }
+
+  Widget _tableCell(String text, {bool isHeader = false}) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+          fontSize: 14,
+        ),
+      ),
+    );
+  }
+
 
   Widget _projectInchargeWidget(Map<String, dynamic> projectInCharge) {
     return Container(

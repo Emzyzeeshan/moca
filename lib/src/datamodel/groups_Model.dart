@@ -3,22 +3,38 @@ class GroupsModel {
   String? groupHeading;
   String? apiUrl;
   String? collapseStatus;
+  String? graphApplicable;
+  String? materType;
+  String? lastUpdatedDate;
 
-  GroupsModel({this.slno, this.groupHeading, this.apiUrl, this.collapseStatus});
+  GroupsModel(
+      {this.slno,
+        this.groupHeading,
+        this.apiUrl,
+        this.collapseStatus,
+        this.graphApplicable,
+        this.materType,
+        this.lastUpdatedDate});
 
   GroupsModel.fromJson(Map<String, dynamic> json) {
-    slno = json['slno'];
-    groupHeading = json['groupHeading'];
-    apiUrl = json['apiUrl'];
-    collapseStatus = json['collapseStatus'];
+    slno = json['Slno'];
+    groupHeading = json['GroupHeading'];
+    apiUrl = json['ApiUrl'];
+    collapseStatus = json['CollapseStatus'];
+    graphApplicable = json['GraphApplicable'];
+    materType = json['MaterType'];
+    lastUpdatedDate = json['LastUpdatedDate'];
   }
 
   Map<String, dynamic> toJson() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['slno'] = this.slno;
-    data['groupHeading'] = this.groupHeading;
-    data['apiUrl'] = this.apiUrl;
-    data['collapseStatus'] = this.collapseStatus;
+    data['Slno'] = this.slno;
+    data['GroupHeading'] = this.groupHeading;
+    data['ApiUrl'] = this.apiUrl;
+    data['CollapseStatus'] = this.collapseStatus;
+    data['GraphApplicable'] = this.graphApplicable;
+    data['MaterType'] = this.materType;
+    data['LastUpdatedDate'] = this.lastUpdatedDate;
     return data;
   }
 }
