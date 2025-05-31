@@ -5,6 +5,7 @@ import 'package:mocadb/src/core/theme/colors.dart';
 import 'package:mocadb/src/core/utils/routes.dart';
 import 'package:mocadb/src/core/utils/shared_preference.dart';
 import 'package:mocadb/src/features/dashboard/provider/dashboard_provider.dart';
+import 'package:mocadb/src/features/dashboard/provider/map_provider.dart';
 import 'package:mocadb/src/features/dashboard/ui/dashboard_screen.dart';
 import 'package:mocadb/src/features/login/login_index.dart';
 import 'common_imports.dart';
@@ -51,6 +52,8 @@ class MyApp extends StatelessWidget {
           ChangeNotifierProvider<LoginProvider>(create: (_) => LoginProvider()),
           ChangeNotifierProvider<DashboardProvider>(
               create: (_) => DashboardProvider()),
+          ChangeNotifierProvider<MapProvider>(
+              create: (_) => MapProvider()),
           // ChangeNotifierProvider<FeasibilityProvider>(
           //     create: (_) => FeasibilityProvider()),
         ],

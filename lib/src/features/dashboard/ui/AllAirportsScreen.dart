@@ -13,6 +13,7 @@ import '../../widgets/custom_text.dart';
 import '../../widgets/custom_text_form.dart';
 import '../provider/dashboard_provider.dart';
 import 'AirportsViewTappedScreen.dart';
+import 'airport_flight_map_screen.dart';
 
 class AllAirportsScreen extends StatelessWidget {
   const AllAirportsScreen({super.key});
@@ -126,6 +127,7 @@ class AllAirportsScreen extends StatelessWidget {
                 ]),
             child: Column(children: <Widget>[
               Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: <Widget>[
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 14.0, 16.0, 14.0),
@@ -134,44 +136,22 @@ class AllAirportsScreen extends StatelessWidget {
                         textStyle: ThemeTextStyle.style(
                             color: ThemeColors.whiteColor)),
                   ),
+                  IconButton(
+                    icon: const Icon(Icons.link, color: Colors.white, size: 18),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => AirportFlightMapScreen(sourceAirport: data),
+                        ),
+                      );
+                    },
+                  ),
+
                 ],
               ),
             ])),
       ),
-    );
-  }
-
-  //? Custom label Body text
-  Widget _customLabelBodyText({
-    required BuildContext context,
-    required String label,
-    required String? body,
-  }) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Expanded(
-          child: CustomText(
-              writtenText: label,
-              textStyle: ThemeTextStyle.style(
-                fontWeight: FontWeight.normal,
-              )),
-        ),
-        CustomText(
-            writtenText: ' : ',
-            textStyle: ThemeTextStyle.style(
-              fontWeight: FontWeight.normal,
-            )),
-        Expanded(
-          flex: 2,
-          child: CustomText(
-              writtenText: body ?? Constants.hypenSymbol,
-              textStyle: ThemeTextStyle.style(
-                color: ThemeColors.blueColor,
-                fontWeight: FontWeight.w600,
-              )),
-        ),
-      ],
     );
   }
 }

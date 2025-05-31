@@ -33,6 +33,8 @@ class AppUrls {
   static const String getWorkCompleteUrl = '$baseUrl/getWorkComplete';
   static const String getAssistanceUrl = '$baseUrl/getAssistance';
   static const String getGreenInitiativeUrl = '$baseUrl/getGreenInitiative';
+  static const String getMapLatLngUrl = '$baseUrl/getMapLatLng';
+  static const String getMapLatLngDirectionUrl = '$baseUrl/getMapDirections';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';
