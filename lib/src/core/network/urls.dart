@@ -35,6 +35,12 @@ class AppUrls {
   static const String getGreenInitiativeUrl = '$baseUrl/getGreenInitiative';
   static const String getMapLatLngUrl = '$baseUrl/getMapLatLng';
   static const String getMapLatLngDirectionUrl = '$baseUrl/getMapDirections';
+  static const String getTechInitiativeUrl = '$baseUrl/getTechInitiative';
+  static const String getArrSchedulesUrl = '$baseUrl/getArrSchedules';
+  static const String getDepSchedulesUrl = '$baseUrl/getDepSchedules';
+  static const String getOTPUrl = '$baseUrl/getOTP';
+  static const String getRatingUrl = '$baseUrl/getRating';
+  static const String getTarrifUrl = '$baseUrl/getTarrif';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';

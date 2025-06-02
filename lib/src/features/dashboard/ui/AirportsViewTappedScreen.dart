@@ -638,12 +638,8 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
             child: const Center(
                 child: Text("No Assistance Required data available.")));
       case "Green Initiative":
-        return provider.selectedGreenInitiative != null
-            ? _greenInitiativeWidget(provider.selectedGreenInitiative!)
-            : Container(
-            color: ThemeColors.whiteColor,
-            child: const Center(
-                child: Text("No Green Initiative data available.")));
+        return  _greenInitiativeWidget(provider.selectedGreenInitiative ?? {});
+
       case "Project Incharge":
         return provider.selectedProjectIncharge != null
             ? _projectInchargeWidget(provider.selectedProjectIncharge!)
@@ -946,64 +942,204 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-  Widget _greenInitiativeWidget(Map<String, dynamic> greenInitiative) {
+  Widget _greenInitiativeWidget(Map<String, dynamic>? greenInitiative) {
+    final defaultPlaceholder = "-";
+
     return Container(
       color: ThemeColors.whiteColor,
       child: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Column(
-          children: greenInitiative.entries.map((section) {
-            final sectionTitle = section.key;
-            final sectionData = section.value as Map<String, dynamic>;
-
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Section Title
-                  Container(
-                    width: double.infinity,
-                    color: ThemeColors.primaryColor,
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      sectionTitle,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-
-                  // Section Table (Key-Value Rows)
-                  Table(
-                    columnWidths: const {
-                      0: FlexColumnWidth(2),
-                      1: FlexColumnWidth(3),
-                    },
-                    border: TableBorder.all(color: Colors.grey.shade300),
-                    children: sectionData.entries.map((entry) {
-                      return TableRow(
-                        children: [
-                          _tableCell(entry.key, isHeader: true),
-                          _tableCell(entry.value.toString()),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              _sectionWithTable(
+                title: "Details of Energy procurement and consumption",
+                headers: [
+                  [
+                    "", "Renewable Energy", "", "", "Conventional energy", "", "", "", "", ""
+                  ],
+                  [
+                    "Source",
+                    "Installed capacity (in Mw)",
+                    "Consumption from Renewable Source (in Million Units)",
+                    "Per unit cost (in INR)",
+                    "Consumption from Conventional Source (in Million Units)",
+                    "Per unit cost (in INR)",
+                    "Total energy consumption (in Million units)",
+                    "Average per unit cost (in INR)",
+                    "% of energy consumption from renewable source",
+                    "% of energy consumption from non- renewable source"
+                  ],
+                  [
+                    "",
+                    "On-site",
+                    "Off-site",
+                    "Total",
+                    "", "", "", "", "", ""
+                  ],
+                ],
+                data: [
+                  [
+                    "Source A",
+                    "1.62", "0.00", "1.62",
+                    greenInitiative?["Details of Energy procurement and consumption"]?["Consumption from Renewable Source (in Million Units)"]?.toString() ?? defaultPlaceholder,
+                    greenInitiative?["Details of Energy procurement and consumption"]?["Per unit cost (in INR)"]?.toString() ?? defaultPlaceholder,
+                    greenInitiative?["Details of Energy procurement and consumption"]?["Consumption from Conventional Source (in Million Units)"]?.toString() ?? defaultPlaceholder,
+                    greenInitiative?["Details of Energy procurement and consumption"]?["Total energy consumption (in Million units)"]?.toString() ?? defaultPlaceholder,
+                    greenInitiative?["Details of Energy procurement and consumption"]?["Average per unit cost (in INR)"]?.toString() ?? defaultPlaceholder,
+                    greenInitiative?["Details of Energy procurement and consumption"]?["% of energy consumption from renewable source"]?.toString() ?? defaultPlaceholder,
+                  ]
                 ],
               ),
-            );
-          }).toList(),
+              _sectionWithKeyValueTable(
+                title: "Net Metering",
+                keys: [
+                  "Whether Net Metered Yes/No",
+                  "Sanctioned Capacity of Net metering (in Mw)",
+                  "Allowed upto how much Million Units"
+                ],
+                values: greenInitiative?["Net Metering"] ?? {},
+              ),
+              _sectionWithKeyValueTable(
+                title: "Status of achieving Carbon Neutrality",
+                keys: [
+                  "Steps taken for achieving Carbon Neutrality",
+                  "Achieved Net Zero (Y/N)",
+                  "Target Date to achieve",
+                  "PERT Chart",
+                  "Remarks"
+                ],
+                values: greenInitiative?["Status of achieving Carbon Neutrality"] ?? {},
+              ),
+              _sectionWithKeyValueTable(
+                title: "Status of achieving Net Zero",
+                keys: [
+                  "Steps taken for achieving Net Zero",
+                  "Achieved Net Zero (Y/N)",
+                  "Target Date to achieve",
+                  "PERT Chart",
+                  "Remarks"
+                ],
+                values: greenInitiative?["Status of achieving Net Zero"] ?? {},
+              ),
+              _sectionWithKeyValueTable(
+                title: "Sewage Treatment Plant Details",
+                keys: [
+                  "Installed sewage treatment capacity (KLD)",
+                  "STP installation (KLD)",
+                  "Target date to achieve"
+                ],
+                values: greenInitiative?["Sewage Treatment Plant Details"] ?? {},
+              ),
+              _sectionWithKeyValueTable(
+                title: "Installation of LED lights details",
+                keys: [
+                  "No. of Non-LED lights installed",
+                  "No. of LED lights installed"
+                ],
+                values: greenInitiative?["Installation of LED lights details"] ?? {},
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _tableCell(String text, {bool isHeader = false}) {
+
+
+
+  Widget _sectionWithKeyValueTable({
+    required String title,
+    required List<String> keys,
+    required Map<String, dynamic> values,
+  }) {
     return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            color: ThemeColors.primaryColor,
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          Table(
+            columnWidths: const {
+              0: FlexColumnWidth(3),
+              1: FlexColumnWidth(4),
+            },
+            border: TableBorder.all(color: Colors.grey.shade300),
+            children: keys.map((key) {
+              return TableRow(
+                children: [
+                  _tableCell(key, isHeader: true),
+                  _tableCell(values[key]?.toString() ?? "-"),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _sectionWithTable({
+    required String title,
+    required List<List<String>> headers,
+    required List<List<String>> data,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: double.infinity,
+            color: ThemeColors.primaryColor,
+            padding: const EdgeInsets.all(8.0),
+            child: Text(
+              title,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+                fontSize: 16,
+              ),
+            ),
+          ),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Table(
+              defaultColumnWidth: IntrinsicColumnWidth(),
+              border: TableBorder.all(color: Colors.grey.shade300),
+              children: [
+                ...headers.map((row) => TableRow(
+                  children: row.map((cell) => _tableCell(cell, isHeader: true)).toList(),
+                )),
+                ...data.map((row) => TableRow(
+                  children: row.map((cell) => _tableCell(cell)).toList(),
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+
+  Widget _tableCell(String text, {bool isHeader = false}) {
+    return Container(
       padding: const EdgeInsets.all(8.0),
+      color: isHeader ? Colors.blue.shade50 : Colors.white,
       child: Text(
         text,
         style: TextStyle(
@@ -1013,6 +1149,7 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
+
 
 
   Widget _projectInchargeWidget(Map<String, dynamic> projectInCharge) {
