@@ -4,7 +4,10 @@ import 'package:mocadb/src/datamodel/AirportDetails/cargo_tonnage_model.dart';
 import '../../../../common_imports.dart';
 import '../../../core/constants/constant_text.dart';
 import '../../../core/network/network_index.dart';
+import '../../../datamodel/AirportDetails/FilterParamsModel.dart';
 import '../../../datamodel/AirportDetails/airport_details_model.dart';
+import '../../../datamodel/AirportDetails/arrival_schedule_model.dart';
+import '../../../datamodel/AirportDetails/departure_schedule_model.dart';
 import '../../../datamodel/AirportDetails/movement_details_model.dart';
 import '../../../datamodel/AirportDetails/passenger_footfall_model.dart';
 import '../../../datamodel/airports_model.dart';
@@ -13,21 +16,48 @@ import '../../../datamodel/groups_Model.dart';
 import '../../../datamodel/state_wise_airport_model.dart';
 import '../../../datamodel/states_model.dart';
 import '../ui/AirportListScreen.dart';
+import 'monitor_provider.dart';
 
 class DashboardProvider extends ChangeNotifier {
   bool isLoading = false;
   late Box box;
   late String airportCode;
-
+  Map<String, dynamic>? combinedOtp;
   void isLoadData(bool isLoading) {
     this.isLoading = isLoading;
     //  notifyListeners();
   }
+  bool showMonitorAndDirectoryButtons = true;
+  void _updateCombinedOtp() {
+    if (selectedOtp != null || selectedOtpDep != null) {
+      combinedOtp = {
+        'arrival': selectedOtp ?? {},
+        'departure': selectedOtpDep ?? {},
+      };
+      notifyListeners();
+    }
+  }
+  FilterParamsModel? _filterParams;
 
+  FilterParamsModel? get filterParams => _filterParams;
+
+  void setFilterParams(FilterParamsModel params) {
+    _filterParams = params;
+    notifyListeners();
+  }
+
+  void clearFilterParams() {
+    _filterParams = null;
+    notifyListeners();
+  }
+  void toggleMonitorAndDirectoryVisibility() {
+    showMonitorAndDirectoryButtons = !showMonitorAndDirectoryButtons;
+    notifyListeners();
+  }
   final TextEditingController AirportNameController = TextEditingController();
   final FocusNode AirportNameFocusNode = FocusNode();
 //********************************PUT FILTER AIRPORT API CALL**********************************//
-  Future<void> postFilterAirportListApiCall(
+  Future<List<StateWiseAirportModel>?> postFilterAirportListApiCall(
       FilterAirportsModel postData, DashboardProvider dashboardProvider, BuildContext context) async {
     final HTTPResponse<dynamic> response = await ApiCalling.callApi(
       apiUrl: AppUrls.postFilterAirportUrl,
@@ -36,52 +66,52 @@ class DashboardProvider extends ChangeNotifier {
     );
 
     if (response.statusCode == 200) {
-      List<dynamic> responseList = response.body; // Assuming it's a list of JSON objects
-
-      // Convert responseList from AllAirportsModel to StateWiseAirportModel
-      List<StateWiseAirportModel> stateWiseAirports = responseList
-          .map((json) => StateWiseAirportModel.fromJson(json))
-          .toList();
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => AirportListScreen(airportList: stateWiseAirports),
-        ),
-      );
+      List<dynamic> responseList = response.body;
+      List<StateWiseAirportModel> stateWiseAirports =
+      responseList.map((json) => StateWiseAirportModel.fromJson(json)).toList();
+      notifyToAllValues();
+      return stateWiseAirports;
     } else {
       String errorMessage = response.body;
       if (errorMessage.isEmpty) {
         errorMessage = ConstantMessage.somethingWentWrongPleaseTryAgain;
       }
       EasyLoading.showError(errorMessage);
+      return null;
     }
-
-    notifyToAllValues();
   }
 
 
   //********************************GET ALL AIRPORTS LIST API CALL**********************************//
   AllAirportsModel? selectedAllAirports;
   List<AllAirportsModel> allAirportsList = [];
+
   Future<void> getAllAirportListApiCall() async {
     isLoadData(true);
-    selectedAllAirports = null;
-    final HTTPResponse<dynamic> response = await ApiCalling.callApi(
-      isLoading: false,
-      apiUrl: AppUrls.getAllAirportsUrl,
-      apiFunType: APITypes.get,
-    );
-    if (response.statusCode == 200) {
-      allAirportsList = (response.body as List<dynamic>)
-          .map((e) => AllAirportsModel.fromJson(e))
-          .toList();
-      // schemaGetModel = schemaCodeList.first;
-      print('Water Size List loaded: $allAirportsList');
+    try {
+      final response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getAllAirportsUrl,
+        apiFunType: APITypes.get,
+      );
+
+      if (response.statusCode == 200) {
+        allAirportsList = (response.body as List)
+            .map((e) => AllAirportsModel.fromJson(e))
+            .toList();
+
+        if (allAirportsList.isNotEmpty) {
+          selectedAllAirports = allAirportsList.first;
+          // Do NOT call other APIs here.
+        }
+      }
+    } catch (e) {
+      debugPrint("Airport fetch error: $e");
     }
     isLoadData(false);
-    notifyToAllValues();
   }
+
+
 
   //********************************GET ALL STATES LIST API CALL**********************************//
   AllStatesModel? selectedAllStates;
@@ -840,200 +870,281 @@ class DashboardProvider extends ChangeNotifier {
   }
 
   //********************************GET WORK IN PROGRESS API CALL**********************************//
-  Map<String, dynamic>? selectedWorkInProgress;
   List<Map<String, dynamic>> workInProgressList = [];
 
-  Future<void> getWorkInProgressApiCall({required String airportCd}) async {
+  Future<void> getWorkInProgressApiCall({
+    required String airportCd,
+    dynamic box,
+  }) async {
     try {
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getWorkUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{
-          "airportCd": airportCd,
-        },
+        sendingData: {"airportCd": airportCd},
       );
 
-      if (response.statusCode == 200) {
-        final dynamic data = response.body;
-        print("🔍 API Response: $data"); // Debugging
-
-        if (data is List) {
-          workInProgressList = data.cast<Map<String, dynamic>>();
-          selectedWorkInProgress = workInProgressList.isNotEmpty ? workInProgressList.first : null;
-          print("✅ Parsed Work In Progress: $selectedWorkInProgress");
-        } else {
-          print("⚠ API returned an incorrect format.");
-          workInProgressList.clear();
-          selectedWorkInProgress = null;
-        }
+      if (response.statusCode == 200 && response.body is List) {
+        workInProgressList = response.body.cast<Map<String, dynamic>>();
       } else {
-        print("❌ Failed to fetch Work In Progress data. Status Code: ${response.statusCode}");
-        workInProgressList.clear();
-        selectedWorkInProgress = null;
-        if(box != null) {
-          List airports = box.get('airports');
-          if(airports.any((a) => a[0] == airportCd)) {
-            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
-            selectedWorkInProgress = selectedAirport['Work In Progress'];
+        // Fallback to Hive
+        if (box != null) {
+          final airports = box.get('airports');
+          final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+          if (matching != null) {
+            final offlineData = Map<String, dynamic>.from(
+              (matching[1] as Map).map((key, value) => MapEntry(key.toString(), value)),
+            );
+
+            final list = offlineData['Work In Progress'];
+            if (list is List) {
+              workInProgressList = List<Map<String, dynamic>>.from(
+                list.map((item) => Map<String, dynamic>.from(
+                  (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+                )),
+              );
+              debugPrint('📦 Fallback WIP loaded from Hive');
+            }
           }
         }
       }
     } catch (e) {
-      print("🚨 Error fetching Work In Progress data: $e");
-      workInProgressList.clear();
-      selectedWorkInProgress = null;
+      debugPrint("🚨 WIP Exception: $e");
+      workInProgressList = [];
+
+      // Load from box if available
+      if (box != null) {
+        final airports = box.get('airports');
+        final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+        if (matching != null) {
+          final offlineData = Map<String, dynamic>.from(
+            (matching[1] as Map).map((key, value) => MapEntry(key.toString(), value)),
+          );
+
+          final list = offlineData['Work In Progress'];
+          if (list is List) {
+            workInProgressList = List<Map<String, dynamic>>.from(
+              list.map((item) => Map<String, dynamic>.from(
+                (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+              )),
+            );
+            debugPrint('📦 Fallback WIP loaded from Hive');
+          }
+        }
+      }
+
     }
 
-    notifyListeners(); // Notify UI about the update
+    notifyListeners();
   }
 
+
+
+
   //********************************GET WORK PLANNED API CALL**********************************//
-  Map<String, dynamic>? selectedWorkPlanned;
   List<Map<String, dynamic>> workPlannedList = [];
 
-  Future<void> getWorkPlannedApiCall({required String airportCd}) async {
+  Future<void> getWorkPlannedApiCall({required String airportCd, dynamic box}) async {
     try {
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getWorkPlanUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{
-          "airportCd": airportCd,
-        },
+        sendingData: <String, dynamic>{"airportCd": airportCd},
       );
 
       if (response.statusCode == 200) {
         final dynamic data = response.body;
-        print("🔍 API Response: $data"); // Debugging
+        print("🔍 API Response: $data");
 
         if (data is List) {
           workPlannedList = data.cast<Map<String, dynamic>>();
-          selectedWorkPlanned = workPlannedList.isNotEmpty ? workPlannedList.first : null;
-          print("✅ Parsed Work Planned: $selectedWorkPlanned");
         } else {
           print("⚠ API returned an incorrect format.");
           workPlannedList.clear();
-          selectedWorkPlanned = null;
         }
       } else {
         print("❌ Failed to fetch Work Planned data. Status Code: ${response.statusCode}");
         workPlannedList.clear();
-        selectedWorkPlanned = null;
-        if(box != null) {
+
+        if (box != null) {
           List airports = box.get('airports');
-          if(airports.any((a) => a[0] == airportCd)) {
-            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
-            selectedWorkPlanned = selectedAirport['Works Planned'];
+          if (airports.any((a) => a[0] == airportCd)) {
+            final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+            if (matching != null) {
+              final offlineData = Map<String, dynamic>.from(
+                (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
+              );
+              final list = offlineData['Works Planned'];
+              if (list is List) {
+                workPlannedList = List<Map<String, dynamic>>.from(
+                  list.map((item) => Map<String, dynamic>.from(
+                    (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+                  )),
+                );
+                debugPrint('📦 Fallback WP loaded from Hive');
+              }
+            }
+
           }
         }
       }
     } catch (e) {
-      print("🚨 Error fetching Work Planned data: $e");
-      workPlannedList.clear();
-      selectedWorkPlanned = null;
+      debugPrint("🚨 WP Exception: $e");
+      if (box != null) {
+        List airports = box.get('airports');
+        final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+        if (matching != null) {
+          final offlineData = Map<String, dynamic>.from(
+            (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
+          );
+          final list = offlineData['Works Planned'];
+          if (list is List) {
+            workPlannedList = List<Map<String, dynamic>>.from(
+              list.map((item) => Map<String, dynamic>.from(
+                (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+              )),
+            );
+          }
+        }
+      }
+
     }
 
-    notifyListeners(); // Notify UI about the update
+    notifyListeners();
   }
 
+
   //********************************GET COMPLETED WORKS API CALL**********************************//
-  Map<String, dynamic>? selectedCompletedWorks;
   List<Map<String, dynamic>> completedWorksList = [];
 
-  Future<void> getCompletedWorksApiCall({required String airportCd}) async {
+  Future<void> getCompletedWorksApiCall({required String airportCd, dynamic box}) async {
     try {
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getWorkCompleteUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{
-          "airportCd": airportCd,
-        },
+        sendingData: <String, dynamic>{"airportCd": airportCd},
       );
 
       if (response.statusCode == 200) {
         final dynamic data = response.body;
-        print("🔍 API Response: $data"); // Debugging
+        print("🔍 API Response: $data");
 
         if (data is List) {
           completedWorksList = data.cast<Map<String, dynamic>>();
-          selectedCompletedWorks = completedWorksList.isNotEmpty ? completedWorksList.first : null;
-          print("✅ Parsed Completed Works: $selectedCompletedWorks");
         } else {
           print("⚠ API returned an incorrect format.");
           completedWorksList.clear();
-          selectedCompletedWorks = null;
         }
       } else {
         print("❌ Failed to fetch Completed Works data. Status Code: ${response.statusCode}");
         completedWorksList.clear();
-        selectedCompletedWorks = null;
-        if(box != null) {
+
+        if (box != null) {
           List airports = box.get('airports');
-          if(airports.any((a) => a[0] == airportCd)) {
-            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
-            selectedCompletedWorks = selectedAirport['Completed Works'];
+          if (airports.any((a) => a[0] == airportCd)) {
+            final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+            if (matching != null) {
+              final offlineData = Map<String, dynamic>.from(
+                (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
+              );
+              final list = offlineData['Completed Works'];
+              if (list is List) {
+                completedWorksList = List<Map<String, dynamic>>.from(
+                  list.map((item) => Map<String, dynamic>.from(
+                    (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+                  )),
+                );
+
+              }
+            }
+
           }
         }
       }
     } catch (e) {
-      print("🚨 Error fetching Completed Works data: $e");
-      completedWorksList.clear();
-      selectedCompletedWorks = null;
+      debugPrint("🚨 work complete Exception: $e");
+      if (box != null) {
+        debugPrint("🚨 work complete Exception: $e");
+        List airports = box.get('airports');
+        final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+        if (matching != null) {
+          final offlineData = Map<String, dynamic>.from(
+            (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
+          );
+          final list = offlineData['Completed Works'];
+          if (list is List) {
+            completedWorksList = List<Map<String, dynamic>>.from(
+              list.map((item) => Map<String, dynamic>.from(
+                (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+              )),
+            );
+            debugPrint('📦 Fallback work complete loaded from Hive');
+          }
+        }
+      }
+
     }
 
-    notifyListeners(); // Notify UI about the update
+    notifyListeners();
   }
 
+
   //********************************GET ASSISTANCE REQUIRED API CALL**********************************//
-  Map<String, dynamic>? selectedAssistanceRequired;
   List<Map<String, dynamic>> assistanceRequiredList = [];
 
-  Future<void> getAssistanceRequiredApiCall({required String airportCd}) async {
+  Future<void> getAssistanceRequiredApiCall({required String airportCd, dynamic box}) async {
     try {
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getAssistanceUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{
-          "airportCd": airportCd,
-        },
+        sendingData: <String, dynamic>{"airportCd": airportCd},
       );
 
       if (response.statusCode == 200) {
         final dynamic data = response.body;
-        print("🔍 API Response: $data"); // Debugging
+        print("🔍 API Response: $data");
 
         if (data is List) {
           assistanceRequiredList = data.cast<Map<String, dynamic>>();
-          selectedAssistanceRequired = assistanceRequiredList.isNotEmpty ? assistanceRequiredList.first : null;
-          print("✅ Parsed Assistance Required: $selectedAssistanceRequired");
         } else {
           print("⚠ API returned an incorrect format.");
           assistanceRequiredList.clear();
-          selectedAssistanceRequired = null;
         }
       } else {
         print("❌ Failed to fetch Assistance Required data. Status Code: ${response.statusCode}");
         assistanceRequiredList.clear();
-        selectedAssistanceRequired = null;
-        if(box != null) {
+
+        if (box != null) {
           List airports = box.get('airports');
-          if(airports.any((a) => a[0] == airportCd)) {
-            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
-            selectedAssistanceRequired = selectedAirport['Assistance Required'];
+          if (airports.any((a) => a[0] == airportCd)) {
+            final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
+            if (matching != null) {
+              final offlineData = Map<String, dynamic>.from(
+                (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
+              );
+              final list = offlineData['Assistance Required'];
+              if (list is List) {
+                assistanceRequiredList = List<Map<String, dynamic>>.from(
+                  list.map((item) => Map<String, dynamic>.from(
+                    (item as Map).map((k, v) => MapEntry(k.toString(), v)),
+                  )),
+                );
+              }
+            }
           }
         }
       }
     } catch (e) {
       print("🚨 Error fetching Assistance Required data: $e");
       assistanceRequiredList.clear();
-      selectedAssistanceRequired = null;
     }
 
-    notifyListeners(); // Notify UI about the update
+    notifyListeners();
   }
+
 
   //********************************GET GREEN INITIATIVE API CALL**********************************//
   Map<String, dynamic>? selectedGreenInitiative;
@@ -1054,35 +1165,314 @@ class DashboardProvider extends ChangeNotifier {
         final dynamic data = response.body;
         print("🔍 API Response: $data"); // Debugging
 
-        if (data is List) {
-          greenInitiativeList = data.cast<Map<String, dynamic>>();
+        // Instead of checking if data is List, check if it's a Map.
+        if (data is Map<String, dynamic>) {
+          // If it's a valid Map, assign it to greenInitiativeList and selectedGreenInitiative
+          greenInitiativeList = [data];  // Wrap the object in a list as it's being treated as a list
           selectedGreenInitiative = greenInitiativeList.isNotEmpty ? greenInitiativeList.first : null;
-          print("✅ Parsed Assistance Required: $selectedGreenInitiative");
+          print("✅ Parsed Green Initiative: $selectedGreenInitiative");
         } else {
-          print("⚠ API returned an incorrect format.");
+          print("⚠ API returned an incorrect format. Expected a Map.");
           greenInitiativeList.clear();
           selectedGreenInitiative = null;
         }
       } else {
-        print("❌ Failed to fetch Assistance Required data. Status Code: ${response.statusCode}");
+        print("❌ Failed to fetch Green Initiative data. Status Code: ${response.statusCode}");
         greenInitiativeList.clear();
         selectedGreenInitiative = null;
-        if(box != null) {
+
+        // Fallback to box storage if available
+        if (box != null) {
           List airports = box.get('airports');
-          if(airports.any((a) => a[0] == airportCd)) {
+          if (airports.any((a) => a[0] == airportCd)) {
             var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
             selectedGreenInitiative = selectedAirport['Green Initiative'];
           }
         }
       }
     } catch (e) {
-      print("🚨 Error fetching Assistance Required data: $e");
+      print("🚨 Error fetching Green Initiative data: $e");
       greenInitiativeList.clear();
       selectedGreenInitiative = null;
     }
 
     notifyListeners(); // Notify UI about the update
   }
+
+  //********************************GET TARIFF DETAILS API CALL**********************************//
+  Map<String, dynamic>? selectedTariff;
+  List<Map<String, dynamic>> tariffList = [];
+
+  Future<void> getTariffDetialsApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getTariffUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        // Instead of checking if data is List, check if it's a Map.
+        if (data is Map<String, dynamic>) {
+          // If it's a valid Map, assign it to greenInitiativeList and selectedGreenInitiative
+          tariffList = [data];  // Wrap the object in a list as it's being treated as a list
+          selectedTariff = tariffList.isNotEmpty ? tariffList.first : null;
+          print("✅ Parsed Tariff Details: $selectedTariff");
+        } else {
+          print("⚠ API returned an incorrect format. Expected a Map.");
+          tariffList.clear();
+          selectedTariff = null;
+        }
+      } else {
+        print("❌ Failed to fetch Tariff Details data. Status Code: ${response.statusCode}");
+        tariffList.clear();
+        selectedTariff = null;
+
+        // Fallback to box storage if available
+        if (box != null) {
+          List airports = box.get('airports');
+          if (airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedTariff = selectedAirport['Tariff Details'];
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching Tariff Details data: $e");
+      tariffList.clear();
+      selectedTariff = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
+
+  //********************************GET RATING API CALL**********************************//
+  Map<String, dynamic>? selectedRating;
+  List<Map<String, dynamic>> ratingList = [];
+
+  Future<void> getRatingApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getRatingUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        // Instead of checking if data is List, check if it's a Map.
+        if (data is Map<String, dynamic>) {
+          // If it's a valid Map, assign it to greenInitiativeList and selectedGreenInitiative
+          ratingList = [data];  // Wrap the object in a list as it's being treated as a list
+          selectedRating = ratingList.isNotEmpty ? ratingList.first : null;
+          print("✅ Parsed Rating: $selectedRating");
+        } else {
+          print("⚠ API returned an incorrect format. Expected a Map.");
+          ratingList.clear();
+          selectedRating = null;
+        }
+      } else {
+        print("❌ Failed to fetch Rating data. Status Code: ${response.statusCode}");
+        ratingList.clear();
+        selectedRating = null;
+
+        // Fallback to box storage if available
+        if (box != null) {
+          List airports = box.get('airports');
+          if (airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedRating = selectedAirport['Rating'];
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching Rating data: $e");
+      ratingList.clear();
+      selectedRating = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
+  //********************************GET TECH INITIATIVE API CALL**********************************//
+  List<Map<String, dynamic>>? selectedTechInitiative;
+
+  List<Map<String, dynamic>> techInitiativeList = [];
+
+  Future<void> getTechInitiativeApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getTechInitiativeUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data");
+
+        if (data is List) {
+          // Safe cast each item to Map<String, dynamic>
+          techInitiativeList = List<Map<String, dynamic>>.from(data);
+          selectedTechInitiative = techInitiativeList;
+          print("✅ Parsed Technology Initiative: $selectedTechInitiative");
+        } else {
+          print("⚠ API returned an incorrect format. Expected a List.");
+          techInitiativeList.clear();
+          selectedTechInitiative = null;
+        }
+      } else {
+        print("❌ Failed to fetch Technology Initiative data. Status Code: ${response.statusCode}");
+        techInitiativeList.clear();
+        selectedTechInitiative = null;
+
+        // Optional: fallback from local storage if available
+        if (box != null) {
+          List airports = box.get('airports');
+          if (airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedTechInitiative = List<Map<String, dynamic>>.from(
+              selectedAirport['Technology Initiative'] ?? [],
+            );
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching Technology Initiative data: $e");
+      techInitiativeList.clear();
+      selectedTechInitiative = null;
+    }
+
+    notifyListeners(); // Notify UI
+  }
+
+  //********************************GET OTP ARRIVAL  API CALL**********************************//
+  Map<String, dynamic>? selectedOtp;
+  List<Map<String, dynamic>> otpList = [];
+
+  Future<void> getOtpArrivalApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getOTPUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+          "Type":"ARR",
+          "Date":"02/APR/2025"
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        // Instead of checking if data is List, check if it's a Map.
+        if (data is Map<String, dynamic>) {
+          // If it's a valid Map, assign it to greenInitiativeList and selectedGreenInitiative
+          otpList = [data];  // Wrap the object in a list as it's being treated as a list
+          selectedOtp = otpList.isNotEmpty ? otpList.first : null;
+          _updateCombinedOtp();
+          print("✅ Parsed OTP: $selectedOtp");
+        } else {
+          print("⚠ API returned an incorrect format. Expected a Map.");
+          otpList.clear();
+          selectedOtp = null;
+        }
+      } else {
+        print("❌ Failed to fetch OTP data. Status Code: ${response.statusCode}");
+        otpList.clear();
+        selectedOtp = null;
+
+        // Fallback to box storage if available
+        if (box != null) {
+          List airports = box.get('airports');
+          if (airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedOtp = selectedAirport['OTP'];
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching OTP data: $e");
+      otpList.clear();
+      selectedOtp = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
+  //********************************GET OTP DEPARTURE  API CALL**********************************//
+  Map<String, dynamic>? selectedOtpDep;
+  List<Map<String, dynamic>> otpDepList = [];
+
+  Future<void> getOtpDepartureApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getOTPUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+          "Type":"DEP",
+          "Date":"02/APR/2025"
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        // Instead of checking if data is List, check if it's a Map.
+        if (data is Map<String, dynamic>) {
+          otpDepList = [data];  // ✅ correct list for departure
+          selectedOtpDep = otpDepList.isNotEmpty ? otpDepList.first : null;
+          _updateCombinedOtp(); // if this uses both arrival and departure, it's okay
+          print("✅ Parsed Departure OTP: $selectedOtpDep");
+        }
+        else {
+          print("⚠ API returned an incorrect format. Expected a Map.");
+          otpList.clear();
+          selectedOtp = null;
+        }
+      } else {
+        print("❌ Failed to fetch OTP data. Status Code: ${response.statusCode}");
+        otpList.clear();
+        selectedOtp = null;
+
+        // Fallback to box storage if available
+        if (box != null) {
+          List airports = box.get('airports');
+          if (airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedOtp = selectedAirport['OTP'];
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching OTP data: $e");
+      otpList.clear();
+      selectedOtp = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
 
   //********************************GET PROJECT INCHARGE API CALL**********************************//
   Map<String, dynamic>? selectedProjectIncharge;
@@ -1248,6 +1638,120 @@ class DashboardProvider extends ChangeNotifier {
       print("🚨 Error fetching passenger footfall data: $e");
       cargoTonnageList.clear();
       selectedCargoTonnage = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
+  //********************************GET ARRIVAL SCHEDULE API CALL**********************************//
+  ArrivalSchedulesModel? selectedArrivalSchedules;
+  List<ArrivalSchedulesModel> arrivalSchedulesList = [];
+
+  Future<void> getArrivalSchedulesListApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getArrSchedulesUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+          "ArrDate":"14 MAY 2025"
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        if (data is Map<String, dynamic> && data.containsKey('ArrivalSchedules')) {
+          arrivalSchedulesList = [
+            ArrivalSchedulesModel.fromJson(data as Map<String, dynamic>)
+          ];
+          selectedArrivalSchedules = arrivalSchedulesList.first;
+          print("✅ Parsed Arrival Schedule Details: ${selectedArrivalSchedules?.arrivalSchedules?.length}");
+        } else if (data is List) {
+          arrivalSchedulesList = data
+              .map((e) => ArrivalSchedulesModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          selectedArrivalSchedules = arrivalSchedulesList.isNotEmpty ? arrivalSchedulesList.first : null;
+        } else {
+          print("⚠ API returned an incorrect format.");
+          arrivalSchedulesList.clear();
+          selectedArrivalSchedules = null;
+        }
+      } else {
+        print("❌ Failed to fetch Arrival Schedule data. Status Code: ${response.statusCode}");
+        arrivalSchedulesList.clear();
+        selectedArrivalSchedules = null;
+        if(box != null) {
+          List airports = box.get('airports');
+          if(airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedArrivalSchedules = ArrivalSchedulesModel.fromJson(selectedAirport['Arrival Flight Schedules']);
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching Arrival Schedule data: $e");
+      arrivalSchedulesList.clear();
+      selectedArrivalSchedules = null;
+    }
+
+    notifyListeners(); // Notify UI about the update
+  }
+
+  //********************************GET DEPARTURE SCHEDULE API CALL**********************************//
+  DepartureSchedulesModel? selectedDepartureSchedules;
+  List<DepartureSchedulesModel> departureSchedulesList = [];
+
+  Future<void> getDepartureSchedulesListApiCall({required String airportCd}) async {
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getDepSchedulesUrl,
+        apiFunType: APITypes.post,
+        sendingData: <String, dynamic>{
+          "airportCd": airportCd,
+          "DepDate":"14 MAY 2025"
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final dynamic data = response.body;
+        print("🔍 API Response: $data"); // Debugging
+
+        if (data is Map<String, dynamic> && data.containsKey('DepartureSchedules')) {
+          departureSchedulesList = [
+            DepartureSchedulesModel.fromJson(data)
+          ];
+          selectedDepartureSchedules = departureSchedulesList.first;
+          print("✅ Parsed Departure Schedule Details: ${selectedDepartureSchedules?.departureSchedules?.length}");
+        } else if (data is List) {
+          departureSchedulesList = data
+              .map((e) => DepartureSchedulesModel.fromJson(e as Map<String, dynamic>))
+              .toList();
+          selectedDepartureSchedules = departureSchedulesList.isNotEmpty ? departureSchedulesList.first : null;
+        } else {
+          print("⚠ API returned an incorrect format.");
+          departureSchedulesList.clear();
+          selectedDepartureSchedules = null;
+        }
+      } else {
+        print("❌ Failed to fetch Departure Schedule data. Status Code: ${response.statusCode}");
+        departureSchedulesList.clear();
+        selectedDepartureSchedules = null;
+        if(box != null) {
+          List airports = box.get('airports');
+          if(airports.any((a) => a[0] == airportCd)) {
+            var selectedAirport = jsonDecode(jsonEncode(airports.firstWhere((a) => a[0] == airportCd)[1]));
+            selectedDepartureSchedules = DepartureSchedulesModel.fromJson(selectedAirport['Departure Flight Schedules']);
+          }
+        }
+      }
+    } catch (e) {
+      print("🚨 Error fetching Departure Schedule data: $e");
+      departureSchedulesList.clear();
+      selectedDepartureSchedules = null;
     }
 
     notifyListeners(); // Notify UI about the update

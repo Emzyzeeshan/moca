@@ -40,7 +40,20 @@ class AppUrls {
   static const String getDepSchedulesUrl = '$baseUrl/getDepSchedules';
   static const String getOTPUrl = '$baseUrl/getOTP';
   static const String getRatingUrl = '$baseUrl/getRating';
-  static const String getTarrifUrl = '$baseUrl/getTarrif';
+  static const String getTariffUrl = '$baseUrl/getTariff';
+
+  ///Monitor apis///
+  static const String getArrUrl = '$baseUrl/getArrDep';
+  static const String getDepUrl = '$baseUrl/getArrDep';
+  static const String getTopRoutesUrl = '$baseUrl/getTopRoutes';
+  static const String getTopAirlinesUrl = '$baseUrl/getTopAirlines';
+  static const String getArrDepTrackUrl = '$baseUrl/getArrDepTrack';
+  static const String getIndexUrl = '$baseUrl/getIndex';
+  static const String getDateUrl = '$baseUrl/getDate';
+
+
+///All apis///
+  static const String getAirportDetailsAllUrl = '$baseUrl/airportDetails';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';
   // static const String  Url= '$baseUrl/';

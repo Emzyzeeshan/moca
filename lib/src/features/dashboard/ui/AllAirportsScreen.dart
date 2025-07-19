@@ -136,17 +136,17 @@ class AllAirportsScreen extends StatelessWidget {
                         textStyle: ThemeTextStyle.style(
                             color: ThemeColors.whiteColor)),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.link, color: Colors.white, size: 18),
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => AirportFlightMapScreen(sourceAirport: data),
-                        ),
-                      );
-                    },
-                  ),
+                  // IconButton(
+                  //   icon: const Icon(Icons.link, color: Colors.white, size: 18),
+                  //   onPressed: () {
+                  //     Navigator.push(
+                  //       context,
+                  //       MaterialPageRoute(
+                  //         builder: (_) => AirportFlightMapScreen(sourceAirport: data),
+                  //       ),
+                  //     );
+                  //   },
+                  // ),
 
                 ],
               ),

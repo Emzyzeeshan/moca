@@ -52,6 +52,9 @@ dependencies:
   hive_flutter: ^1.1.0
   hive: ^2.2.3
   flutter_map: ^8.1.1
+  fl_chart: ^1.0.0
+  percent_indicator: ^4.2.5
+  pluto_grid: ^8.0.0
 flutter_launcher_icons:
     android: true
     ios: true
@@ -104,6 +107,7 @@ flutter:
     - assets/images/
     - assets/svg/india_map/
     - assets/svg/Indian_States/
+    - assets/india_boundaries.json
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

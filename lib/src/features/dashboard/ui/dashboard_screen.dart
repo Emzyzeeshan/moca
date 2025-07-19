@@ -26,29 +26,18 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   late DashboardProvider dashboardProvider;
-  int _selectedIndex = 0; // Track selected tab
-  late List<Widget> _screens; // Define without initialization
 
   @override
   void initState() {
     super.initState();
     dashboardProvider = Provider.of(context, listen: false);
     fetchData();
-    // Initialize _screens inside initState where context is available
-    _screens = [
-      IndiaMapWidget(),
-      const FilterScreen(), // Second tab - Filters Screen
-    ];
   }
+
   Future<void> fetchData() async {
     EasyLoading.show(status: Constants.loading);
     await dashboardProvider.getAllAirportListApiCall();
     EasyLoading.dismiss();
-  }
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index; // Update selected tab
-    });
   }
 
   @override
@@ -82,8 +71,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   },
                 ),
               ],
-
             ),
+
             drawer: Drawer(
               width: context.width * .6,
               backgroundColor: ThemeColors.whiteColor,
@@ -96,83 +85,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   Padding(
                     padding: const EdgeInsets.all(12.0),
                     child: CustomText(
-                        writtenText: LocalStorages.getMobileNumber(),
-                        textStyle: ThemeTextStyle.style()),
+                      writtenText: LocalStorages.getMobileNumber(),
+                      textStyle: ThemeTextStyle.style(),
+                    ),
                   ),
                   ListTile(
                     leading: const CustomIcon(icon: Icons.local_airport),
                     title: CustomText(
-                        writtenText: Constants.airports,
-                        textStyle: ThemeTextStyle.style()),
+                      writtenText: Constants.airports,
+                      textStyle: ThemeTextStyle.style(),
+                    ),
                     onTap: () async {
-                      await NavigateRoutes.navigatePush(widget: const AllAirportsScreen(), context: context, );
+                      await NavigateRoutes.navigatePush(
+                        widget: const AllAirportsScreen(),
+                        context: context,
+                      );
                     },
                   ),
                   const DottedDivider(),
                   ListTile(
                     leading: const CustomIcon(icon: Icons.logout),
                     title: CustomText(
-                        writtenText: Constants.logOut,
-                        textStyle: ThemeTextStyle.style()),
+                      writtenText: Constants.logOut,
+                      textStyle: ThemeTextStyle.style(),
+                    ),
                     onTap: () async {
-                      await NavigateRoutes.navigateToLoginScreen(
-                          isLogoutTap: true);
+                      await NavigateRoutes.navigateToLoginScreen(isLogoutTap: true);
                     },
                   ),
                 ],
               ),
             ),
-            body: IndexedStack(
-              index: _selectedIndex,
-              children: _screens,
-            ),
-            bottomNavigationBar: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black12,
-                    blurRadius: 10,
-                    offset: Offset(0, -1),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                child: BottomNavigationBar(
-                  backgroundColor: Colors.white,
-                  type: BottomNavigationBarType.fixed,
-                  elevation: 0,
-                  selectedItemColor: ThemeColors.primaryColor,
-                  unselectedItemColor: Colors.grey[600],
-                  selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
-                  unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w400),
-                  currentIndex: _selectedIndex,
-                  onTap: _onItemTapped,
-                  items: const <BottomNavigationBarItem>[
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.map),
-                      label: 'India Map',
-                    ),
-                    BottomNavigationBarItem(
-                      icon: Icon(Icons.filter_list),
-                      label: 'Filters',
-                    ),
-                  ],
-                ),
-              ),
-            ),
 
+            // ✅ Only show IndiaMap screen
+            body: const IndiaMapWidget(),
+
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                provider.toggleMonitorAndDirectoryVisibility();
+              },
+              backgroundColor: ThemeColors.primaryColor,
+              mini: true,
+              tooltip: provider.showMonitorAndDirectoryButtons ? 'Hide Buttons' : 'Show Buttons',
+              child: Icon(
+                provider.showMonitorAndDirectoryButtons ? Icons.visibility_off : Icons.visibility,
+                color: ThemeColors.whiteColor,
+              ),
+            ),
           ),
         );
       },
     );
   }
 }
+

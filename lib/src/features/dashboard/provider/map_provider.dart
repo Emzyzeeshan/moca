@@ -15,7 +15,7 @@ class MapProvider extends ChangeNotifier {
     this.isLoading = isLoading;
     notifyListeners();
   }
-
+  bool isLoadingMap = true;
 //********************************MAP LAT LNG API CALL**********************************//
   MapModel? selectedMapLatLng;
   List<MapModel> allMapLatLngList = [];
@@ -51,35 +51,38 @@ class MapProvider extends ChangeNotifier {
   //********************************MAP LAT LNG DIRECTION API CALL**********************************//
   MapDirectionModel? selectedMapLatLngDirection;
   List<MapDirectionModel> allMapLatLngDirectionList = [];
-  Future<void> postMapLatLngDirectionApiCall({required String airportCd}) async{
+  Future<void> postMapLatLngDirectionApiCall({required String airportCd}) async {
     isLoadData(true);
+    isLoadingMap = true;
     selectedMapLatLngDirection = null;
-    final HTTPResponse<dynamic> response = await ApiCalling.callApi(
-      isLoading: false,
-      apiUrl: AppUrls.getMapLatLngDirectionUrl,
-      apiFunType: APITypes.post,
-      sendingData: <String, dynamic>{
-        "airportCd": airportCd,
-      },
-    );
-    if (response.statusCode == 200) {
-      final body = response.body;
+    allMapLatLngDirectionList.clear();
 
-      if (body is List) {
-        allMapLatLngDirectionList = body.map((e) => MapDirectionModel.fromJson(Map<String, dynamic>.from(e))).toList();
-      } else if (body is Map) {
-        allMapLatLngDirectionList = [MapDirectionModel.fromJson(Map<String, dynamic>.from(body))];
+    try {
+      final HTTPResponse<dynamic> response = await ApiCalling.callApi(
+        isLoading: false,
+        apiUrl: AppUrls.getMapLatLngDirectionUrl,
+        apiFunType: APITypes.post,
+        sendingData: {"airportCd": airportCd},
+      );
+
+      if (response.statusCode == 200) {
+        final body = response.body;
+
+        if (body is List) {
+          allMapLatLngDirectionList = body.map<MapDirectionModel>((e) =>
+              MapDirectionModel.fromJson(Map<String, dynamic>.from(e))).toList();
+        } else if (body is Map) {
+          allMapLatLngDirectionList = [MapDirectionModel.fromJson(Map<String, dynamic>.from(body))];
+        } else {
+          debugPrint("Unexpected response body format: $body");
+        }
       } else {
-        debugPrint("Unexpected response body: $body");
+        debugPrint("API Error: ${response.statusCode}");
       }
-
-      debugPrint("MapLatLng Loaded: ${allMapLatLngDirectionList.length}");
-      for (var m in allMapLatLngDirectionList) {
-        debugPrint("Markers in model: ${m.mapMarkers?.length}");
-      }
+    } catch (e) {
+      debugPrint("API Exception: $e");
     }
-
-
+    isLoadingMap = false;
     isLoadData(false);
     notifyToAllValues();
   }

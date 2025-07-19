@@ -4,8 +4,10 @@ import 'package:hive_flutter/adapters.dart';
 import 'package:mocadb/src/core/theme/colors.dart';
 import 'package:mocadb/src/core/utils/routes.dart';
 import 'package:mocadb/src/core/utils/shared_preference.dart';
+import 'package:mocadb/src/features/dashboard/provider/common_provider.dart';
 import 'package:mocadb/src/features/dashboard/provider/dashboard_provider.dart';
 import 'package:mocadb/src/features/dashboard/provider/map_provider.dart';
+import 'package:mocadb/src/features/dashboard/provider/monitor_provider.dart';
 import 'package:mocadb/src/features/dashboard/ui/dashboard_screen.dart';
 import 'package:mocadb/src/features/login/login_index.dart';
 import 'common_imports.dart';
@@ -20,25 +22,27 @@ class CustomHttpOverrides extends HttpOverrides {
 Future<void> main() async {
   HttpOverrides.global = CustomHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
-  await SystemChrome.setPreferredOrientations(<DeviceOrientation>[
+
+  await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown
+    DeviceOrientation.portraitDown,
   ]);
+
   await LocalStorages.init();
-
   await Hive.initFlutter();
-  var box = await Hive.openBox('moca');
 
-  if(box.get('airports') == null) { // todo - remove || true
+  var box = await Hive.openBox('moca');
+  if (box.get('airports') == null) {
     await box.put('airports', []);
     await box.put('airportsImages', []);
     await box.delete('airports');
     await box.delete('airportsImages');
-
   }
+
 
   runApp(const MyApp());
 }
+
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -54,8 +58,10 @@ class MyApp extends StatelessWidget {
               create: (_) => DashboardProvider()),
           ChangeNotifierProvider<MapProvider>(
               create: (_) => MapProvider()),
-          // ChangeNotifierProvider<FeasibilityProvider>(
-          //     create: (_) => FeasibilityProvider()),
+          ChangeNotifierProvider<MonitorProvider>(
+              create: (_) => MonitorProvider()),
+          ChangeNotifierProvider<CommonProvider>(
+              create: (_) => CommonProvider()),
         ],
         child: SafeArea(
             child: MaterialApp(

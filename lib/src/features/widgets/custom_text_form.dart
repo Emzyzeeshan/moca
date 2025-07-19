@@ -280,97 +280,100 @@ class CustomDropdown<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasLabel = labelName.trim().isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
-        RichText(
-          text: TextSpan(
-            children: _buildLabelTextSpans(labelName, labelStyle),
+        if (hasLabel) ...[
+          RichText(
+            text: TextSpan(
+              children: _buildLabelTextSpans(labelName, labelStyle),
+            ),
           ),
-        ),
-        8.ph,
+          const SizedBox(height: 8),
+        ],
         FormField<T>(
-            autovalidateMode: autovalidateMode,
-            validator: validator,
-            initialValue: value,
-            builder: (FormFieldState<T> state) {
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: <Widget>[
-                  Container(
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          // color: ThemeColors.greyColor,
-                          color: state.hasError
-                              ? Colors.red
-                              : ThemeColors.greyColor,
-                        )),
-                    child: DropdownSearch<T>(
-                        // autoValidateMode: autovalidateMode,
-                        items: items,
-                        selectedItem: value,
-                        itemAsString: itemLabel,
-                        // onChanged: onChanged,
-                        // validator: validator,
-                        onChanged: (T? val) {
-                          state.didChange(val);
-                          if (onChanged != null) {
-                            onChanged!(val);
-                          }
-                        },
-                        dropdownDecoratorProps: DropDownDecoratorProps(
-                            dropdownSearchDecoration: InputDecoration(
-                                contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 12.0, vertical: 4.0),
-                                hintText: hintText,
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12.0),
-                                ))),
-                        dropdownBuilder:
-                            (BuildContext context, T? selectedItem) {
-                          return Text(
-                            selectedItem != null
-                                ? itemLabel(selectedItem)
-                                : hintText,
-                            style: const TextStyle(color: Colors.black),
-                          );
-                        },
-                        popupProps: PopupProps<T>.menu(
-                          fit: FlexFit.loose,
-                          // showSearchBox: false,
-                          constraints: BoxConstraints(
-                              minHeight: dropdownBoxMinHeight,
-                              maxHeight: context.height * .6),
-                          menuProps:
-                              const MenuProps(backgroundColor: Colors.white),
-                          showSearchBox: showSearchBox, // Enable the search box
-                          searchFieldProps: TextFieldProps(
-                            decoration: InputDecoration(
-                              hintText: 'Search...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                            ),
-                          ),
-                        )),
-                  ),
-                  if (state.hasError)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0, left: 4.0),
-                      child: CustomText(
-                        writtenText: state.errorText ?? '',
-                        textStyle: ThemeTextStyle.style(
-                          color: Colors.red,
-                          fontSize: 12,
-                          fontWeight: FontWeight.normal,
+          autovalidateMode: autovalidateMode,
+          validator: validator,
+          initialValue: value,
+          builder: (FormFieldState<T> state) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: <Widget>[
+                Container(
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12.0),
+                      border: Border.all(
+                        color: state.hasError
+                            ? Colors.red
+                            : ThemeColors.greyColor,
+                      )),
+                  child: DropdownSearch<T>(
+                    items: items,
+                    selectedItem: value,
+                    itemAsString: itemLabel,
+                    onChanged: (T? val) {
+                      state.didChange(val);
+                      if (onChanged != null) {
+                        onChanged!(val);
+                      }
+                    },
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12.0, vertical: 4.0),
+                        hintText: hintText,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12.0),
                         ),
                       ),
                     ),
-                ],
-              );
-            }),
+                    dropdownBuilder:
+                        (BuildContext context, T? selectedItem) {
+                      return Text(
+                        selectedItem != null
+                            ? itemLabel(selectedItem)
+                            : hintText,
+                        style: const TextStyle(color: Colors.black),
+                      );
+                    },
+                    popupProps: PopupProps<T>.menu(
+                      fit: FlexFit.loose,
+                      constraints: BoxConstraints(
+                          minHeight: dropdownBoxMinHeight,
+                          maxHeight: context.height * .6),
+                      menuProps:
+                      const MenuProps(backgroundColor: Colors.white),
+                      showSearchBox: showSearchBox,
+                      searchFieldProps: TextFieldProps(
+                        decoration: InputDecoration(
+                          hintText: 'Search...',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(4.0),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                if (state.hasError)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8.0, left: 4.0),
+                    child: CustomText(
+                      writtenText: state.errorText ?? '',
+                      textStyle: ThemeTextStyle.style(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ],
     );
   }
@@ -389,6 +392,7 @@ class CustomDropdown<T> extends StatelessWidget {
     return spans;
   }
 }
+
 
 ///DATE PICKER WITH LABEL
 class CustomDateSelection extends StatelessWidget {
