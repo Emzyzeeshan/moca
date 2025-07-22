@@ -63,12 +63,14 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
 
-      final box = await Hive.openBox('moca');
+      final mocaBox = await Hive.openBox('moca');
+      //final offlineBox = await Hive.openBox('offlineAirports'); // ✅ OPEN THIS FIRST
+
       final airportCd = widget.data.airportCd ?? '';
 
-      await dashboardProvider.getWorkInProgressApiCall(airportCd: airportCd, box: box);
-      await dashboardProvider.getWorkPlannedApiCall(airportCd: airportCd, box: box);
-      await dashboardProvider.getCompletedWorksApiCall(airportCd: airportCd, box: box);
+      await dashboardProvider.getWorkInProgressApiCall(airportCd: airportCd, box: mocaBox);
+      await dashboardProvider.getWorkPlannedApiCall(airportCd: airportCd, box: mocaBox);
+      await dashboardProvider.getCompletedWorksApiCall(airportCd: airportCd, box: mocaBox);
 
       dashboardProvider.airportCode = airportCd;
 
@@ -683,7 +685,7 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
         );
 
       case "Work In Progress":
-        return provider.workInProgressList.isNotEmpty
+        return provider.workPlannedList.isNotEmpty
             ? _workInProgressWidget(provider.workInProgressList)
             : Container(
           color: ThemeColors.whiteColor,
@@ -1024,6 +1026,7 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       child: Column(
         children: [
           SizedBox(
+            key: ValueKey(schedules.hashCode),
             height: 320, // or any height that fits your layout
             child: PlutoGrid(
               columns: columns,
@@ -1094,6 +1097,7 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       child: Column(
         children: [
           SizedBox(
+            key: ValueKey(schedules.hashCode),
             height: 320, // or any height that fits your layout
             child: PlutoGrid(
               columns: columns,
@@ -1178,16 +1182,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-// Helper function
-  List<Map<String, dynamic>> _convertToWorkList(dynamic data) {
-    if (data is List) {
-      return data.cast<Map<String, dynamic>>();
-    } else if (data is Map) {
-      return [data.cast<String, dynamic>()];
-    }
-    throw ArgumentError('Invalid data type for work progress');
-  }
-// New widget for single item
   Widget _workInProgressWidget(List<Map<String, dynamic>> works) {
     if (works.isEmpty) {
       return Container(
@@ -1262,13 +1256,8 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
-
-
-
-
-  Widget _workPlannedWidget(List<Map<String, dynamic>> works) {
-    if (works.isEmpty) {
+  Widget _workPlannedWidget(List<Map<String, dynamic>> workPlanned) {
+    if (workPlanned.isEmpty) {
       return Container(
         color: Colors.white,
         padding: const EdgeInsets.all(16),
@@ -1316,18 +1305,18 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
                         _tableHeader('Remarks/Concerns'),
                       ],
                     ),
-                    ...works.asMap().entries.map((entry) {
+                    ...workPlanned.asMap().entries.map((entry) {
                       final index = entry.key + 1;
-                      final work = entry.value;
+                      final workPlanned = entry.value;
 
                       return TableRow(
                         children: [
                           _tableCell('$index'),
-                          _tableCell(getField(work, 'Name of Work')),
-                          _tableCell(getField(work, 'Cost (in Cr.)')),
-                          _tableCell(getField(work, 'Start Date')),
-                          _tableCell(getField(work, 'End Date (PDC)')),
-                          _tableCell(getField(work, 'Remarks/Concerns')),
+                          _tableCell(getField(workPlanned, 'Name of Work')),
+                          _tableCell(getField(workPlanned, 'Cost (in Cr.)')),
+                          _tableCell(getField(workPlanned, 'Start Date')),
+                          _tableCell(getField(workPlanned, 'End Date (PDC)')),
+                          _tableCell(getField(workPlanned, 'Remarks/Concerns')),
                         ],
                       );
                     }),
@@ -1340,8 +1329,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
-
   Widget _completedWorksWidget(List<Map<String, dynamic>> works) {
     if (works.isEmpty) {
       return Container(
@@ -1415,8 +1402,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
-
   Widget _assistanceRequiredWidget(List<Map<String, dynamic>> assistanceList) {
     if (assistanceList.isEmpty) {
       return Container(
@@ -1489,9 +1474,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
-
-
   Widget _greenInitiativeWidget(Map<String, dynamic>? greenInitiative) {
     const defaultPlaceholder = "-";
 
@@ -1851,7 +1833,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
   Widget _tariffDetailsWidget(Map<String, dynamic>? tariffDetails) {
     final udfDetails = tariffDetails?['UDF Charges Details'] ?? {};
     final airportType =
@@ -1971,7 +1952,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ],
     );
   }
-
   Widget _udfChargeDetailsWidget(Map<String, dynamic>? tariffDetails) {
     final udfData =
         tariffDetails?['UDF Charges Details'] as Map<String, dynamic>?;
@@ -2107,7 +2087,6 @@ class _AirportsViewTappedScreenState extends State<AirportsViewTappedScreen> {
       ),
     );
   }
-
   Map<String, List<List<String>>?> getParkingChargeYearlyRates(
       Map<String, dynamic>? tariffDetails) {
     final Map<String, List<List<String>>?> data = {};
@@ -3306,7 +3285,6 @@ class _OtpChartState extends State<_OtpChart> {
               final seriesList = categories.map((category) {
                 final data =
                     chartData.where((e) => e.category == category).toList();
-                debugPrint('✅ Category "$category" has ${data.length} items');
                 Color color;
                 switch (category) {
                   case 'On Time':

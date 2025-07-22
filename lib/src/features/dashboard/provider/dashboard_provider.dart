@@ -946,149 +946,113 @@ class DashboardProvider extends ChangeNotifier {
 
   Future<void> getWorkPlannedApiCall({required String airportCd, dynamic box}) async {
     try {
+      final box = await Hive.openBox('airports');
+
+      debugPrint("📤 Fetching Work Planned for $airportCd");
+
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getWorkPlanUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{"airportCd": airportCd},
+        sendingData: {"airportCd": airportCd},
       );
 
-      if (response.statusCode == 200) {
-        final dynamic data = response.body;
-        print("🔍 API Response: $data");
-
-        if (data is List) {
-          workPlannedList = data.cast<Map<String, dynamic>>();
-        } else {
-          print("⚠ API returned an incorrect format.");
-          workPlannedList.clear();
-        }
+      if (response.statusCode == 200 && response.body is List) {
+        workPlannedList = List<Map<String, dynamic>>.from(response.body);
+        debugPrint("✅ Work Planned fetched: ${workPlannedList.length} items");
+        await box.put('workPlanned_$airportCd', workPlannedList);
       } else {
-        print("❌ Failed to fetch Work Planned data. Status Code: ${response.statusCode}");
-        workPlannedList.clear();
-
-        if (box != null) {
-          List airports = box.get('airports');
-          if (airports.any((a) => a[0] == airportCd)) {
-            final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
-            if (matching != null) {
-              final offlineData = Map<String, dynamic>.from(
-                (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
-              );
-              final list = offlineData['Works Planned'];
-              if (list is List) {
-                workPlannedList = List<Map<String, dynamic>>.from(
-                  list.map((item) => Map<String, dynamic>.from(
-                    (item as Map).map((k, v) => MapEntry(k.toString(), v)),
-                  )),
-                );
-                debugPrint('📦 Fallback WP loaded from Hive');
-              }
-            }
-
-          }
+        debugPrint("❌ Failed to fetch Work Planned. Loading from cache...");
+        final cachedData = box.get('workPlanned_$airportCd');
+        if (cachedData is List) {
+          workPlannedList = cachedData
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        } else {
+          workPlannedList = [];
         }
       }
-    } catch (e) {
-      debugPrint("🚨 WP Exception: $e");
-      if (box != null) {
-        List airports = box.get('airports');
-        final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
-        if (matching != null) {
-          final offlineData = Map<String, dynamic>.from(
-            (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
-          );
-          final list = offlineData['Works Planned'];
-          if (list is List) {
-            workPlannedList = List<Map<String, dynamic>>.from(
-              list.map((item) => Map<String, dynamic>.from(
-                (item as Map).map((k, v) => MapEntry(k.toString(), v)),
-              )),
-            );
-          }
-        }
+    } catch (e, st) {
+      debugPrint("🚨 Exception in Work Planned API: $e\n$st");
+      final box = await Hive.openBox('airports');
+      final cachedData = box.get('workPlanned_$airportCd');
+      if (cachedData is List) {
+        workPlannedList = cachedData
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      } else {
+        workPlannedList = [];
       }
-
     }
-
     notifyListeners();
   }
-
 
   //********************************GET COMPLETED WORKS API CALL**********************************//
   List<Map<String, dynamic>> completedWorksList = [];
 
-  Future<void> getCompletedWorksApiCall({required String airportCd, dynamic box}) async {
+  Future<void> getCompletedWorksApiCall({
+    required String airportCd,
+    dynamic box,
+  }) async {
     try {
+      final box = await Hive.openBox('airports');
+
+      debugPrint("📤 Fetching Completed Works for $airportCd");
+
       final HTTPResponse<dynamic> response = await ApiCalling.callApi(
         isLoading: false,
         apiUrl: AppUrls.getWorkCompleteUrl,
         apiFunType: APITypes.post,
-        sendingData: <String, dynamic>{"airportCd": airportCd},
+        sendingData: {"airportCd": airportCd},
       );
 
-      if (response.statusCode == 200) {
-        final dynamic data = response.body;
-        print("🔍 API Response: $data");
+      if (response.statusCode == 200 && response.body is List) {
+        completedWorksList = List<Map<String, dynamic>>.from(response.body);
+        debugPrint("✅ Completed Works fetched: ${completedWorksList.length} items");
 
-        if (data is List) {
-          completedWorksList = data.cast<Map<String, dynamic>>();
-        } else {
-          print("⚠ API returned an incorrect format.");
-          completedWorksList.clear();
-        }
+        // 💾 Save response to Hive with unique key
+        await box.put('completedWorks_$airportCd', completedWorksList);
       } else {
-        print("❌ Failed to fetch Completed Works data. Status Code: ${response.statusCode}");
-        completedWorksList.clear();
-
-        if (box != null) {
-          List airports = box.get('airports');
-          if (airports.any((a) => a[0] == airportCd)) {
-            final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
-            if (matching != null) {
-              final offlineData = Map<String, dynamic>.from(
-                (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
-              );
-              final list = offlineData['Completed Works'];
-              if (list is List) {
-                completedWorksList = List<Map<String, dynamic>>.from(
-                  list.map((item) => Map<String, dynamic>.from(
-                    (item as Map).map((k, v) => MapEntry(k.toString(), v)),
-                  )),
-                );
-
-              }
-            }
-
-          }
+        debugPrint("📦 Hive keys: ${box.keys}");
+        debugPrint("📦 Cached completedWorks_${airportCd}: ${box.get('completedWorks_$airportCd')}");
+        debugPrint("❌ Failed to fetch Completed Works. Loading from cache...");
+        final cachedData = box.get('completedWorks_$airportCd');
+        if (cachedData is List) {
+          completedWorksList = cachedData
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        } else {
+          completedWorksList = [];
         }
       }
-    } catch (e) {
-      debugPrint("🚨 work complete Exception: $e");
-      if (box != null) {
-        debugPrint("🚨 work complete Exception: $e");
-        List airports = box.get('airports');
-        final matching = airports.firstWhere((a) => a[0] == airportCd, orElse: () => null);
-        if (matching != null) {
-          final offlineData = Map<String, dynamic>.from(
-            (matching[1] as Map).map((k, v) => MapEntry(k.toString(), v)),
-          );
-          final list = offlineData['Completed Works'];
-          if (list is List) {
-            completedWorksList = List<Map<String, dynamic>>.from(
-              list.map((item) => Map<String, dynamic>.from(
-                (item as Map).map((k, v) => MapEntry(k.toString(), v)),
-              )),
-            );
-            debugPrint('📦 Fallback work complete loaded from Hive');
-          }
-        }
-      }
+    } catch (e, st) {
 
+      debugPrint("🚨 Exception in Completed Works API: $e\n$st");
+
+      // 🧊 Fallback to Hive in case of exception
+      final box = await Hive.openBox('airports');
+      debugPrint("📦 Hive keys: ${box.keys}");
+      debugPrint("📦 Cached completedWorks_${airportCd}: ${box.get('completedWorks_$airportCd')}");
+
+      final cachedData = box.get('completedWorks_$airportCd');
+      if (cachedData is List) {
+        completedWorksList = cachedData
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+        debugPrint('📦 Fallback Completed Works loaded from Hive');
+      } else {
+        completedWorksList = [];
+      }
     }
 
     notifyListeners();
   }
+
+
 
 
   //********************************GET ASSISTANCE REQUIRED API CALL**********************************//

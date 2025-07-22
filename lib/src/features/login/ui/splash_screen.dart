@@ -22,23 +22,27 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     navigateToNextScreen();
   }
-
-  Future<void> navigateToNextScreen() async {
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      final commonProvider = Provider.of<CommonProvider>(context, listen: false);
-      final isLoaded = LocalStorages.getIsAirportDataLoaded();
-
-      if (!isLoaded) {
-        await commonProvider.postAllAirportsDetailsBulk();
-        LocalStorages.saveUserData(
-          localSaveType: LocalSaveType.isAirportDataLoaded,
-          value: true,
-        );
-      }
-
-      NavigateRoutes.navigateTo(); // Replace with actual route like LoginScreen()
+  void navigateToNextScreen() {
+    Future.delayed(const Duration(seconds: 2), () {
+      NavigateRoutes.navigateTo();
     });
   }
+  // Future<void> navigateToNextScreen() async {
+  //   WidgetsBinding.instance.addPostFrameCallback((_) async {
+  //     final commonProvider = Provider.of<CommonProvider>(context, listen: false);
+  //     final isLoaded = LocalStorages.getIsAirportDataLoaded();
+  //
+  //     if (!isLoaded) {
+  //       await commonProvider.postAllAirportsDetailsBulk();
+  //       LocalStorages.saveUserData(
+  //         localSaveType: LocalSaveType.isAirportDataLoaded,
+  //         value: true,
+  //       );
+  //     }
+  //
+  //     NavigateRoutes.navigateTo(); // Replace with actual route like LoginScreen()
+  //   });
+  // }
 
 
   @override

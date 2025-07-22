@@ -103,10 +103,12 @@ class _FilterScreenState extends State<FilterScreen> {
         );
       }).toList();
 
-      Navigator.pop(context, convertedList); // ✅ Now returns List<AllAirportsModel>
+      // ✅ Navigate back with the result
+      Navigator.pop(context, convertedList);
     } else {
       EasyLoading.showInfo("No airports found for selected filters.");
     }
+
 
   }
 
